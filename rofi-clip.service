@@ -1,0 +1,11 @@
+[Unit]
+Description=Rofi-Clip agent
+After=display-manager.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/rofi-clip daemon
+Restart=always
+
+[Install]
+WantedBy=default.target
