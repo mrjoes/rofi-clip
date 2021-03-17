@@ -1,7 +1,6 @@
 #!/usr/bin/python
 import os
 import subprocess
-import pyperclip
 import socket
 import json
 import struct
@@ -14,7 +13,9 @@ from sys import argv
 CLIP_LIMIT = 200             # number of clipboard history
 STRING_LIMIT = 200
 HELP = '''rofi-clip menu|daemon'''
-PASTE = "xdotool key ctrl+v"
+CLIP_GET = ["xclip", "-o", "-selection", "clipboard"]
+CLIP_SET = ["xclip", "-selection", "clipboard"]
+PASTE = "xdotool key ctrl+shift+v"
 
 
 class ClipboardManager():
@@ -53,10 +54,18 @@ class ClipboardManager():
         else:
             self._send(conn, '')
 
+    def _clip_get(self):
+        process = subprocess.Popen(CLIP_GET, stdout=subprocess.PIPE)
+        return process.stdout.read().decode('utf-8')
+
+    def _clip_set(self, text):
+        process = subprocess.Popen(CLIP_SET, stdin=subprocess.PIPE)
+        process.stdin.write(text.encode('utf-8'))
+
     def _paste(self, text):
         if text:
             # Paste selection
-            pyperclip.copy(text)
+            self._clip_set(text)
 
             # Insert
             os.system(PASTE)
@@ -107,7 +116,7 @@ class ClipboardManager():
             os.system('clipnotify')
 
             with self.lock:
-                clip = pyperclip.paste()
+                clip = self._clip_get()
                 if clip and (not self.clips or clip != self.clips[0]):
                     if clip in self.clips:
                         self.clips.remove(clip)
@@ -137,7 +146,6 @@ class ClipboardManager():
 
     def paste(self):
         text = self._communicate({'op': 'paste'})
-        print(2, text)
         self._paste(text)
 
 if __name__ == "__main__":
